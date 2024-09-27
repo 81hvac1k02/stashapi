@@ -1,4 +1,5 @@
-from enum import Enum, IntEnum
+from enum import Enum
+
 
 class StashEnum(Enum):
 	def __repr__(self) -> str:

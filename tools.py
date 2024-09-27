@@ -1,5 +1,9 @@
-import base64, hashlib, math, re
+import base64
+import hashlib
+import math
+import re
 from collections import defaultdict
+
 
 def defaultify(d:dict, default=None):
 	"""Return default dict for given nested dictionaries with provided default value"""

@@ -8,9 +8,10 @@
 # formatted methods are intended for use by script scraper instances to transmit log
 # messages.
 
-import re, sys, json
-
+import json
 import logging
+import re
+import sys
 from functools import partial, partialmethod
 
 logging.TRACE = 5  # low order python logging level

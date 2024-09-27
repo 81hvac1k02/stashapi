@@ -1,11 +1,11 @@
-import re, math, requests
+import math
+import re
 from enum import Enum
 
 from requests.structures import CaseInsensitiveDict
 
 from .classes import GQLWrapper
-
-from .tools import file_to_base64, url_to_base64, str_compare
+from .tools import file_to_base64, str_compare, url_to_base64
 
 STASH_ID_PATTERN = r'(?:[0-9a-fA-F]){8}-(?:[0-9a-fA-F]){4}-(?:[0-9a-fA-F]){4}-(?:[0-9a-fA-F]){4}-(?:[0-9a-fA-F]){12}'
 

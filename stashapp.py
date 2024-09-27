@@ -1,14 +1,16 @@
-import re, math, time
+import math
+import re
+import time
 
 from requests.structures import CaseInsensitiveDict
 
-from .tools import str_compare
-
-from .stash_types import StashItem
-from .stash_types import PhashDistance
-from .stash_types import OnMultipleMatch
 from .classes import GQLWrapper
 from .classes import StashVersion
+from .stash_types import OnMultipleMatch
+from .stash_types import PhashDistance
+from .stash_types import StashItem
+from .tools import str_compare
+
 
 class StashInterface(GQLWrapper):
 	port = ""

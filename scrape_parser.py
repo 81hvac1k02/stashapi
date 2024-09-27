@@ -1,8 +1,8 @@
 import datetime
 
 from . import log as StashLogger
-
 from .stash_types import Gender
+
 
 class ScrapeParser:
 
