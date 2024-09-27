@@ -18,12 +18,12 @@ class StashInterface(GQLWrapper):
     port = ""
     url = ""
 
-    def __init__(self, conn: dict, fragments: list[str], verify_ssl: bool = True):
+    def __init__(self, conn: dict, fragments: Iterable[str], verify_ssl: bool = True):
         super().__init__()
         self.s.verify = verify_ssl
-        conn = conn or {}
+
         fragments = fragments or []
-        conn = CaseInsensitiveDict(conn)
+        conn = CaseInsensitiveDict(conn or {})
 
         self.log = conn.get("Logger", None)
         if not self.log:
@@ -94,7 +94,7 @@ class StashInterface(GQLWrapper):
         for fragment in fragments:
             self.parse_fragments(fragment)
 
-    def _parse_obj_for_ID(self, param, str_key="name"):
+    def _parse_obj_for_ID(self, param: str | dict, str_key="name"):
         if isinstance(param, str):
             try:
                 return int(param)
@@ -109,7 +109,7 @@ class StashInterface(GQLWrapper):
 
     def __generic_find(
         self,
-        query,
+        query: str,
         item: dict[str, int] | int,
         fragment: tuple[str, str] = (None, None),
     ):
@@ -2018,7 +2018,7 @@ class StashInterface(GQLWrapper):
 
     # Markers CRUD
     # TODO: remove deprecated function
-    def get_scene_markers(self, scene_id, fragment=None) -> list:
+    def get_scene_markers(self, scene_id: str | int, fragment=None) -> list:
         """returns a list of markers for a particular Scene given the scene_id
 
         Args:
