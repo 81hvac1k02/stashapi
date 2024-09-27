@@ -49,7 +49,7 @@ class Marker:
 		})
 
 	@classmethod
-	def from_scrape(cls, scraped, scene_id, stash:StashInterface):
+	def from_scrape(cls, scraped:dict, scene_id, stash:StashInterface):
 		seconds = scraped["seconds"]
 		if isinstance(seconds, (int, float)):
 			seconds = float(seconds)
@@ -93,7 +93,7 @@ class Marker:
 		}
 
 
-def merge_markers(marker_list, distance=15):
+def merge_markers(marker_list:list, distance=15):
 	marker_list.sort(key=lambda m: m.seconds)
 	merged_markers = []
 	close_marker_sets = []
