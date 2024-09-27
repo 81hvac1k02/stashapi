@@ -35,7 +35,7 @@ STASH_LOG_LEVEL_MAP = {
 
 # Regex to replace data blobs from logging
 DATA_BLOB_REGEX = re.compile(r"[\'|\"]data:.+/.*;base64,(?P<content>.*?)[\'|\"]")
-# Max size of golang buf - level bytes and newline, theoretical max (64 * 1024) - 4  
+# Max size of golang buf - level bytes and newline, theoretical max (64 * 1024) - 4
 LOG_PAYLOAD_MAX_SZ = 64000
 
 
@@ -47,9 +47,9 @@ def truncate_base64_replacement(match_group):
 
 class StashLogHandler(logging.Handler):
     """Python std logging handler that outputs to stash log over stderr
-	LOG_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG')
-	logging.basicConfig(format="%(name)s| %(message)s", handlers=[StashLogHandler()], level=LOG_LEVEL)
-	"""
+    LOG_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG')
+    logging.basicConfig(format="%(name)s| %(message)s", handlers=[StashLogHandler()], level=LOG_LEVEL)
+    """
 
     def __init__(self, stream=sys.stderr) -> None:
         self.stream = stream
@@ -61,7 +61,9 @@ class StashLogHandler(logging.Handler):
         msg = self.format(record)
         msg = DATA_BLOB_REGEX.sub(truncate_base64_replacement, msg)
         for line in msg.split("\n"):
-            self.stream.write(f"\x01{STASH_LOG_LEVEL_MAP.get(record.levelno, 0)}\x02{line[:LOG_PAYLOAD_MAX_SZ]}\n")
+            self.stream.write(
+                f"\x01{STASH_LOG_LEVEL_MAP.get(record.levelno, 0)}\x02{line[:LOG_PAYLOAD_MAX_SZ]}\n"
+            )
             self.stream.flush()
 
 
@@ -76,7 +78,7 @@ def serialize(s):
 
 # module import backwards compatibility i.e. (import stashapi.log as log)
 DISABLE_PROGRESS = False
-sl = logging.getLogger('StashLogger')
+sl = logging.getLogger("StashLogger")
 sl.setLevel(logging.DEBUG)
 sl.addHandler(StashLogHandler())
 
@@ -101,7 +103,7 @@ def error(s):
     sl.error(serialize(s))
 
 
-def progress(p:int):
+def progress(p: int):
     if DISABLE_PROGRESS:
         return
     progress = min(max(0, p), 1)
@@ -111,10 +113,7 @@ def progress(p:int):
 def exit(msg=None, err=None):
     if msg is None and err is None:
         msg = "ok"
-    print(json.dumps({
-        "output": msg,
-        "error": err
-    }))
+    print(json.dumps({"output": msg, "error": err}))
     sys.exit()
 
 
