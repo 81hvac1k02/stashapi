@@ -13,18 +13,22 @@ class GQLWrapper:
 
     def __init__(self):
         self.s = requests.session()
-        self.s.headers.update({
-            "Accept-Encoding": "gzip, deflate",
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Connection": "keep-alive",
-            "DNT": "1"
-        })
+        self.s.headers.update(
+            {
+                "Accept-Encoding": "gzip, deflate",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Connection": "keep-alive",
+                "DNT": "1",
+            }
+        )
         self.s.verify = True
 
     def parse_fragments(self, fragments_in: str):
         fragments = {}
-        fragment_matches = re.finditer(r'fragment\s+([A-Za-z]+)\s+on\s+[A-Za-z]+(\s+)?{', fragments_in)
+        fragment_matches = re.finditer(
+            r"fragment\s+([A-Za-z]+)\s+on\s+[A-Za-z]+(\s+)?{", fragments_in
+        )
         for fragment_match in fragment_matches:
             start = fragment_match.end()
             end = start
@@ -40,44 +44,52 @@ class GQLWrapper:
                     else:
                         end = i
                         break
-            fragments[fragment_match.group(1)] = fragments_in[fragment_match.start():end + 1]
+            fragments[fragment_match.group(1)] = fragments_in[
+                fragment_match.start() : end + 1
+            ]
         self.fragments.update(fragments)
         return fragments
 
     def __resolve_fragments(self, query: str):
-        fragmentReferences = list(set(re.findall(r'(?<=\.\.\.)\w+', query)))
+        fragmentReferences = list(set(re.findall(r"(?<=\.\.\.)\w+", query)))
         fragments = []
         for ref in fragmentReferences:
-            fragments.append({
-                "fragment": ref,
-                "defined": bool(re.search("fragment {}".format(ref), query))
-            })
+            fragments.append(
+                {
+                    "fragment": ref,
+                    "defined": bool(re.search("fragment {}".format(ref), query)),
+                }
+            )
 
         if all([f["defined"] for f in fragments]):
             return query
         else:
             for fragment in [f["fragment"] for f in fragments if not f["defined"]]:
                 if fragment not in self.fragments:
-                    raise Exception(f'StashAPI error: fragment "{fragment}" not defined')
+                    raise Exception(
+                        f'StashAPI error: fragment "{fragment}" not defined'
+                    )
                 query += f"\n{self.fragments[fragment]}"
             return self.__resolve_fragments(query)
 
-    def _get_fragments_introspection(self, fragment_overrides: Optional[dict], attribute_overrides: Optional[dict]):
+    def _get_fragments_introspection(
+        self, fragment_overrides: Optional[dict], attribute_overrides: Optional[dict]
+    ):
         """Automatically generates fragments for GQL endpoint via introspection
 
-		Args:
-			fragment_overrides (dict, optional): mapping of objects and their fragments, any occurrence of these objects will use the defined fragment instead of a generated one
-			attribute_overrides (dict, optional): mapping of objects and specific attributes to override attributes to override. Defaults to {}.
+        Args:
+                fragment_overrides (dict, optional): mapping of objects and their fragments, any occurrence of these objects will use the defined fragment instead of a generated one
+                attribute_overrides (dict, optional): mapping of objects and specific attributes to override attributes to override. Defaults to {}.
 
-		Returns:
-			dict: mapping of fragment names and values
+        Returns:
+                dict: mapping of fragment names and values
 
-		Examples:
-		. code-block:: python
-			fragment_overrides = { "Scene": "{ id }" }
-			attribute_overrides = { "ScrapedStudio": {"parent": "{ stored_id }"} }
+        Examples:
+        . code-block:: python
+                fragment_overrides = { "Scene": "{ id }" }
+                attribute_overrides = { "ScrapedStudio": {"parent": "{ stored_id }"} }
 
-		"""
+        """
 
         if attribute_overrides is None:
             attribute_overrides = {}
@@ -159,7 +171,7 @@ fragment TypeRef on __Type {
 }"""
 
         stash_schema = self._GQL(query)
-        stash_types = stash_schema.get('__schema', {}).get('types', [])
+        stash_types = stash_schema.get("__schema", {}).get("types", [])
 
         def has_object_name(type: dict[str]):
             if type.get("kind") in ["OBJECT", "UNION"]:
@@ -172,14 +184,14 @@ fragment TypeRef on __Type {
         for type in stash_types:
             if type["kind"] != "OBJECT":
                 continue
-            if not type['fields']:
+            if not type["fields"]:
                 continue
 
             type_name = type["name"]
             attribute_override = attribute_overrides.get(type_name, {})
 
             fragment = "{"
-            for field in type['fields']:
+            for field in type["fields"]:
                 if field.get("isDeprecated"):
                     continue
                 attr = field["name"]
@@ -197,7 +209,7 @@ fragment TypeRef on __Type {
             fragment += "\n}"
             fragments[type_name] = fragment
 
-        #Handle UNION Fragments as well
+        # Handle UNION Fragments as well
         for type in stash_types:
             if type["kind"] != "UNION":
                 continue
@@ -205,7 +217,7 @@ fragment TypeRef on __Type {
                 continue
             type_name = type["name"]
             fragment = "{"
-            for field in type['possibleTypes']:
+            for field in type["possibleTypes"]:
                 if field.get("isDeprecated"):
                     continue
                 fragment += f'\n\t...{field["name"]}'
@@ -221,10 +233,10 @@ fragment TypeRef on __Type {
         variables = variables or {}
         query = self.__resolve_fragments(query)
 
-        json_request = {'query': query}
+        json_request = {"query": query}
         if variables:
             serialize_dict(variables)
-            json_request['variables'] = variables
+            json_request["variables"] = variables
 
         response = self.s.post(self.url, json=json_request)
 
@@ -262,24 +274,30 @@ fragment TypeRef on __Type {
             self.log.error(fmt_error)
 
         if response.status_code == 401:
-            self.log.error(f"{response.status_code} {response.reason}. Could not access endpoint {self.url}. Did you provide an API key? Are you running a proxy?")
+            self.log.error(
+                f"{response.status_code} {response.reason}. Could not access endpoint {self.url}. Did you provide an API key? Are you running a proxy?"
+            )
         elif content.get("data") is None:
-            self.log.error(f"{response.status_code} {response.reason} GQL data response is null")
+            self.log.error(
+                f"{response.status_code} {response.reason} GQL data response is null"
+            )
         elif database_locked == 1:
             # If the database_locked bit is set, log error and proceed to exception.
             self.log.error("Database is temporarily locked.")
         elif response.status_code == 200:
             return content["data"]
-        error_msg = f"{response.status_code} {response.reason} query failed. {self.version}"
+        error_msg = (
+            f"{response.status_code} {response.reason} query failed. {self.version}"
+        )
         self.log.error(error_msg)
         raise Exception(error_msg)
 
-    def callGQL(self, query:str, variables:Optional[dict]):
+    def callGQL(self, query: str, variables: Optional[dict] = None):
 
         variables = variables or {}
         return self._GQL(query, variables)
 
-    def _callGraphQL(self, query:str, variables:Optional[dict]):
+    def _callGraphQL(self, query: str, variables: Optional[dict] = None):
 
         variables = variables or {}
         return self._GQL(query, variables)
@@ -294,7 +312,10 @@ class StashVersion:
             self.parse(f"{version_in['version']}-{version_in['hash']}")
 
     def parse(self, ver_str: str) -> None:
-        m = re.search(r'v(?P<MAJOR>\d+)\.(?P<MINOR>\d+)\.(?P<PATCH>\d+)(?:-(?P<BUILD>\d+))?(?:-(?P<HASH>[a-z0-9]{9}))?', ver_str)
+        m = re.search(
+            r"v(?P<MAJOR>\d+)\.(?P<MINOR>\d+)\.(?P<PATCH>\d+)(?:-(?P<BUILD>\d+))?(?:-(?P<HASH>[a-z0-9]{9}))?",
+            ver_str,
+        )
         if m:
             m = m.groupdict()
         else:
@@ -330,12 +351,12 @@ class StashVersion:
 
 
 def rm_query_whitespace(query: str) -> str:
-    whitespace = re.search(r'([\t ]+)(query|mutation)', query)
+    whitespace = re.search(r"([\t ]+)(query|mutation)", query)
     if whitespace:
         whitespace = whitespace.group(1)
         query_lines = []
         for line in query.split("\n"):
-            query_lines.append(re.sub(whitespace, '', line, 1))
+            query_lines.append(re.sub(whitespace, "", line, 1))
         query = "\n".join(query_lines)
     return query
 
